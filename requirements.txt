@@ -1,0 +1,6 @@
+flask
+speechrecognition
+pydub
+textblob
+sentence-transformers
+gunicorn
