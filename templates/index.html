@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Interview Analyzer</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="container">
+
+    <h1>🎤 AI Interview Evaluation System</h1>
+    <p class="subtitle">Analyze your communication with AI</p>
+
+    <div class="controls">
+
+        <!-- LEFT -->
+        <div class="left-btns">
+            <button onclick="startRecording()">🎤 Start</button>
+            <button onclick="stopRecording()">⏹ Stop</button>
+        </div>
+
+        <!-- RIGHT -->
+        <div class="right-form">
+
+            <form method="POST" enctype="multipart/form-data" onsubmit="return validateInput()">
+
+                <input type="text" name="question" placeholder="Enter Interview Question (optional)">
+
+                <!-- UPLOAD -->
+                <div class="row">
+                    <label>📁 Upload Audio:</label>
+                    <input type="file" name="audio">
+                    <button type="submit">Upload & Analyze</button>
+                </div>
+
+                <!-- TEXT -->
+                <div class="row">
+                    <label>✍️ Answer:</label>
+                    <textarea name="manual_text" placeholder="Type your answer here..."></textarea>
+                    <button type="submit">Analyze Text</button>
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+    {% if question %}
+    <div class="card">
+        <h2>❓ Question</h2>
+        <p>{{ question }}</p>
+    </div>
+    {% endif %}
+
+    {% if text %}
+    <div class="card">
+        <h2>📝 Transcript</h2>
+        <p>{{ text }}</p>
+    </div>
+    {% endif %}
+
+    {% if analysis %}
+    <div class="card">
+
+        <h2 id="score">🎯 Final Score: {{ analysis.final_score }}/100</h2>
+
+        <div class="grid">
+            <p>🧠 Relevance: {{ analysis.relevance }}%</p>
+            <p>🗣 Confidence: {{ analysis.confidence }}%</p>
+            <p>📢 Clarity: {{ analysis.clarity }}%</p>
+            <p>⭐ Performance: {{ analysis.level }}</p>
+        </div>
+
+        <h3>💡 Feedback:</h3>
+        <ul>
+            {% for f in analysis.feedback %}
+                <li>{{ f }}</li>
+            {% endfor %}
+        </ul>
+
+        <canvas id="chart"></canvas>
+
+        <a href="/download">
+            <button class="download">📄 Download Report</button>
+        </a>
+
+    </div>
+    {% endif %}
+
+</div>
+
+<!-- JS same as before -->
+<script>
+function validateInput() {
+    const audio = document.querySelector('input[name="audio"]').value;
+    const text = document.querySelector('textarea[name="manual_text"]').value;
+
+    if (!audio && !text) {
+        alert("Please upload audio or enter text");
+        return false;
+    }
+    return true;
+}
+</script>
+
+<script>
+let mediaRecorder;
+let audioChunks = [];
+
+async function startRecording() {
+    audioChunks = [];
+
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+    mediaRecorder = new MediaRecorder(stream);
+
+    mediaRecorder.ondataavailable = event => {
+        audioChunks.push(event.data);
+    };
+
+    mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+
+        const formData = new FormData();
+        formData.append("audio", audioBlob, "recording.webm");
+
+        await fetch("/", {
+            method: "POST",
+            body: formData
+        }).then(res => res.text())
+          .then(html => {
+              document.open();
+              document.write(html);
+              document.close();
+          });
+    };
+
+    mediaRecorder.start();
+}
+
+function stopRecording() {
+    mediaRecorder.stop();
+}
+</script>
+
+<script>
+{% if analysis %}
+const ctx = document.getElementById('chart');
+
+new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: ['Relevance', 'Confidence', 'Clarity'],
+        datasets: [{
+            label: 'AI Evaluation',
+            data: [
+                {{ analysis.relevance }},
+                {{ analysis.confidence }},
+                {{ analysis.clarity }}
+            ],
+            backgroundColor: ['#4CAF50', '#FFC107', '#2196F3']
+        }]
+    },
+    options: {
+        scales: {
+            y: { beginAtZero: true, max: 100 }
+        }
+    }
+});
+{% endif %}
+</script>
+
+</body>
+</html>
