@@ -52,25 +52,24 @@ def analyze_text(text, question=None):
     polarity = TextBlob(text).sentiment.polarity
     sentiment = "Positive 😊" if polarity > 0 else "Negative 😟" if polarity < 0 else "Neutral 😐"
 
+    # 🔥 RELEVANCE FIX
     relevance = 0
-
     q_words = []
 
     if question:
-     q_words = extract_keywords(question)
+        q_words = extract_keywords(question)
 
-    matches = 0
-    for word in q_words:
-      if word in text.lower():
-        matches += 1
+    matches = sum(1 for word in q_words if word in text.lower())
 
-if len(q_words) > 0:
-    relevance = int((matches / len(q_words)) * 100)
+    if len(q_words) > 0:
+        relevance = int((matches / len(q_words)) * 100)
 
+    # SCORES
     confidence = max(100 - (filler_count * 10), 0)
     clarity = 100 if 100 <= wpm <= 160 else 70
     final_score = int((confidence + clarity + relevance) / 3)
 
+    # LEVEL
     if final_score >= 80:
         level = "Excellent ⭐"
     elif final_score >= 60:
@@ -78,6 +77,7 @@ if len(q_words) > 0:
     else:
         level = "Needs Improvement ⚠"
 
+    # FEEDBACK
     feedback = []
 
     if relevance < 50:
@@ -92,7 +92,7 @@ if len(q_words) > 0:
         feedback.append("You are speaking too fast.")
 
     if polarity < 0:
-        feedback.append("Try to sound more confident.")
+        feedback.append("Try to sound more confident and positive.")
 
     if not feedback:
         feedback.append("Great answer! Well structured and confident.")
