@@ -1,11 +1,9 @@
 import speech_recognition as sr
 from textblob import TextBlob
-from sentence_transformers import SentenceTransformer, util
+
 from pydub import AudioSegment
 from pydub.utils import which
 
-# 🔥 load AI model
-model = SentenceTransformer('all-MiniLM-L6-v2')
 
 # 🔥 auto-detect ffmpeg
 AudioSegment.converter = which("ffmpeg")
@@ -57,16 +55,9 @@ def analyze_text(text, question=None):
     relevance = 0
 
     if question and text:
-        try:
-            emb1 = model.encode(question, convert_to_tensor=True)
-            emb2 = model.encode(text, convert_to_tensor=True)
-
-            similarity = util.pytorch_cos_sim(emb1, emb2).item()
-            relevance = int(similarity * 100)
-
-        except Exception as e:
-            print("AI Error:", e)
-            relevance = 0
+      q_words = question.lower().split()
+    matches = sum(1 for word in q_words if word in text.lower())
+    relevance = int((matches / len(q_words)) * 100) if q_words else 0
 
     confidence = max(100 - (filler_count * 10), 0)
     clarity = 100 if 100 <= wpm <= 160 else 70
