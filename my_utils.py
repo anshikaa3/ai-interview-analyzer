@@ -59,10 +59,13 @@ def analyze_text(text, question=None):
     if question:
      q_words = extract_keywords(question)
 
-    matches = sum(1 for word in q_words if word in text.lower())
+    matches = 0
+    for word in q_words:
+      if word in text.lower():
+        matches += 1
 
-    if len(q_words) > 0:
-     relevance = int((matches / len(q_words)) * 100)
+if len(q_words) > 0:
+    relevance = int((matches / len(q_words)) * 100)
 
     confidence = max(100 - (filler_count * 10), 0)
     clarity = 100 if 100 <= wpm <= 160 else 70
