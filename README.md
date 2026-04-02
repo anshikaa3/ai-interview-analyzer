@@ -6,7 +6,7 @@ A smart **AI-powered web application** that analyzes interview responses using s
 
 ## 🚀 Live Demo
 
-🔗 https://ai-interview-analyzer-production.up.railway.app/
+🔗https://ai-interview-analyzer-production-3db1.up.railway.app/
 
 ---
 
@@ -89,7 +89,7 @@ pip install -r requirements.txt
 python app.py
 ```
 
-Visit: http://127.0.0.1:5000
+
 
 ---
 
