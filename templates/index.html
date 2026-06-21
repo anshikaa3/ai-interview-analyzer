@@ -111,38 +111,51 @@ let mediaRecorder;
 let audioChunks = [];
 
 async function startRecording() {
-    audioChunks = [];
+    try {
+        audioChunks = [];
 
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-    mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder = new MediaRecorder(stream);
 
-    mediaRecorder.ondataavailable = event => {
-        audioChunks.push(event.data);
-    };
+        mediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+                audioChunks.push(event.data);
+            }
+        };
 
-    mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+        mediaRecorder.onstop = async () => {
+            const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
 
-        const formData = new FormData();
-        formData.append("audio", audioBlob, "recording.webm");
+            const formData = new FormData();
+            formData.append("audio", audioBlob, "recording.webm");
 
-        await fetch("/", {
-            method: "POST",
-            body: formData
-        }).then(res => res.text())
-          .then(html => {
-              document.open();
-              document.write(html);
-              document.close();
-          });
-    };
+            const response = await fetch("/", {
+                method: "POST",
+                body: formData
+            });
 
-    mediaRecorder.start();
+            const html = await response.text();
+            document.open();
+            document.write(html);
+            document.close();
+        };
+
+        mediaRecorder.start();
+        alert("🎤 Recording Started");
+
+    } catch (err) {
+        alert("Error: " + err.message);
+        console.error(err);
+    }
 }
 
 function stopRecording() {
-    mediaRecorder.stop();
+    if (mediaRecorder && mediaRecorder.state !== "inactive") {
+        mediaRecorder.stop();
+    } else {
+        alert("Recording not started.");
+    }
 }
 </script>
 
