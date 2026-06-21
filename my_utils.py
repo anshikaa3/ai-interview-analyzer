@@ -1,26 +1,47 @@
 import speech_recognition as sr
 from textblob import TextBlob
-
 from pydub import AudioSegment
 from pydub.utils import which
+import re
 
-
-# 🔥 auto-detect ffmpeg
+# Auto detect ffmpeg
 AudioSegment.converter = which("ffmpeg")
 
 
-# 🎤 SPEECH TO TEXT
+# -----------------------------
+# Extract Keywords
+# -----------------------------
+def extract_keywords(text):
+    words = re.findall(r"\b[a-zA-Z]+\b", text.lower())
+
+    stop_words = {
+        "the", "is", "are", "a", "an", "to", "of", "for",
+        "and", "or", "in", "on", "with", "at", "by",
+        "from", "this", "that", "it", "be", "as",
+        "was", "were", "will", "would", "can", "could",
+        "should", "have", "has", "had", "i", "you",
+        "he", "she", "they", "we", "my", "your"
+    }
+
+    return [word for word in words if word not in stop_words]
+
+
+# -----------------------------
+# Speech To Text
+# -----------------------------
 def speech_to_text(audio_path):
     recognizer = sr.Recognizer()
 
-    # 🔥 convert ANY format to proper PCM WAV
     if not audio_path.endswith(".wav"):
         try:
             sound = AudioSegment.from_file(audio_path)
             new_path = audio_path.rsplit(".", 1)[0] + ".wav"
 
-            # ✅ FIX: proper wav format
-            sound.export(new_path, format="wav", parameters=["-ac", "1", "-ar", "16000"])
+            sound.export(
+                new_path,
+                format="wav",
+                parameters=["-ac", "1", "-ar", "16000"]
+            )
 
             audio_path = new_path
 
@@ -37,39 +58,49 @@ def speech_to_text(audio_path):
 
     try:
         return recognizer.recognize_google(audio)
-    except:
+    except Exception as e:
+        print("Speech Recognition Error:", e)
         return ""
 
+
+# -----------------------------
+# Analyze Text
+# -----------------------------
 def analyze_text(text, question=None):
+
     words = text.lower().split()
     total_words = len(words)
 
     filler_words = ["um", "uh", "like", "you know", "basically"]
     filler_count = sum(text.lower().count(f) for f in filler_words)
 
-    wpm = total_words
-
     polarity = TextBlob(text).sentiment.polarity
-    sentiment = "Positive 😊" if polarity > 0 else "Negative 😟" if polarity < 0 else "Neutral 😐"
 
-    # 🔥 RELEVANCE FIX
-    relevance = 0
-    q_words = []
+    if polarity > 0:
+        sentiment = "Positive 😊"
+    elif polarity < 0:
+        sentiment = "Negative 😟"
+    else:
+        sentiment = "Neutral 😐"
+
+    relevance = 100
 
     if question:
         q_words = extract_keywords(question)
 
-    matches = sum(1 for word in q_words if word in text.lower())
+        if len(q_words) > 0:
+            matches = sum(1 for word in q_words if word in text.lower())
+            relevance = int((matches / len(q_words)) * 100)
 
-    if len(q_words) > 0:
-        relevance = int((matches / len(q_words)) * 100)
-
-    # SCORES
     confidence = max(100 - (filler_count * 10), 0)
-    clarity = 100 if 100 <= wpm <= 160 else 70
+
+    if 100 <= total_words <= 160:
+        clarity = 100
+    else:
+        clarity = 70
+
     final_score = int((confidence + clarity + relevance) / 3)
 
-    # LEVEL
     if final_score >= 80:
         level = "Excellent ⭐"
     elif final_score >= 60:
@@ -77,7 +108,6 @@ def analyze_text(text, question=None):
     else:
         level = "Needs Improvement ⚠"
 
-    # FEEDBACK
     feedback = []
 
     if relevance < 50:
@@ -86,9 +116,9 @@ def analyze_text(text, question=None):
     if filler_count > 3:
         feedback.append("Frequent filler words reduce confidence.")
 
-    if wpm < 100:
+    if total_words < 100:
         feedback.append("Your speaking pace is slow.")
-    elif wpm > 170:
+    elif total_words > 170:
         feedback.append("You are speaking too fast.")
 
     if polarity < 0:
@@ -100,7 +130,7 @@ def analyze_text(text, question=None):
     return {
         "total_words": total_words,
         "filler_count": filler_count,
-        "wpm": int(wpm),
+        "wpm": total_words,
         "sentiment": sentiment,
         "relevance": relevance,
         "confidence": confidence,
