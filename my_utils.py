@@ -15,13 +15,16 @@ def extract_keywords(text):
     words = re.findall(r"\b[a-zA-Z]+\b", text.lower())
 
     stop_words = {
-        "the", "is", "are", "a", "an", "to", "of", "for",
-        "and", "or", "in", "on", "with", "at", "by",
-        "from", "this", "that", "it", "be", "as",
-        "was", "were", "will", "would", "can", "could",
-        "should", "have", "has", "had", "i", "you",
-        "he", "she", "they", "we", "my", "your"
-    }
+    "the", "is", "are", "a", "an", "to", "of", "for",
+    "and", "or", "in", "on", "with", "at", "by",
+    "from", "this", "that", "it", "be", "as",
+    "was", "were", "will", "would", "can", "could",
+    "should", "have", "has", "had", "i", "you",
+    "he", "she", "they", "we", "my", "your",
+
+    "what", "who", "where", "when", "why", "which",
+    "how", "explain", "define", "describe", "tell"
+}
 
     return [word for word in words if word not in stop_words]
 
