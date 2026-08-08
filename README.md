@@ -6,7 +6,7 @@ A smart **AI-powered web application** that analyzes interview responses using s
 
 ## 🚀 Live Demo
 
-🔗https://ai-interview-analyzer-production-8ab9.up.railway.app/
+🔗https://ai-interview-analyzer-production-241c.up.railway.app/
 
 ---
 
